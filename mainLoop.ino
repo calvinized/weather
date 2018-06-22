@@ -17,9 +17,10 @@ bool canSleep = false;
 const long subscribeWaitingInterval = 8000; //wait time for PUBLISH feedback (millis)
 const unsigned long MAX_TIME_TO_CONNECT_MS = 20000; //wait time for wiFi/cloud connect (millis)
 const int sleepIntervalTimeOut = 1800; //sleep time if cloud connect timed out (s)
-const int sleepIntervalNormal = 450; //normal time between measurements (s)
+const int sleepIntervalNormal = 480; //normal time between measurements (s)
 const int lowBatterySleepTime = 18000; //sleep time if low battery is triggered (s)
 int motorRunTime = 5000; //millis motor should be on
+int lastResetTime = 0;
 
 const int sensorPower = D7;
 int analogPinSupply = A4;
@@ -101,9 +102,12 @@ void setup() {
     pinMode(motorPin, OUTPUT);
     pinMode(D3, INPUT);
     Particle.subscribe("webhook", subscribeHandler, MY_DEVICES);
+    lastResetTime = Time.now();
 }
 
 void loop() {
+    
+    checkPeriodicReset();
     
     //publishAndRunTestCompare();
     
@@ -170,8 +174,6 @@ bool checkSolarPwr(){ //if solar panel is active and charging battery, returns T
     else {
         return false;
     }
-    
-    
 }
 
 void runMotor(){
@@ -190,41 +192,57 @@ void runMotor(){
     analogWrite(motorPin, 0, 100);
 }
 
+void checkPeriodicReset() {
+    //reset photon every week
+    int currentTime = Time.now();
+    if (currentTime - lastResetTime > 604800) {
+        System.reset();
+    }
+}
+
 void publishAndRunTestCompare(){
     
-    getSensorReading();
-    temperature = String(t_f).format("%1.2f", t_f);
-    humidity = String(h).format("%1.2f", h);
-    pressure = String(p).format("%1.2f", p);
+    /*double temp_log [4];
+    double humid_log [4];
+    double pressure_log [4];*/
     
-    String tempBeforeFan = temperature;
-    String humidityBeforeFan = humidity;
-    String pressureBeforeFan = pressure;
+    getSensorReading();
+    
+    /*temp_log[0] = t_f;
+    humid_log[0] = h;
+    pressure_log[0] = p;*/
+    
+    temperature += String(t_f).format("%1.2f", t_f);
+    temperature += ",";
+    
+    humidity += String(h).format("%1.2f", h);
+    humidity += ",";
+    
+    pressure += String(p).format("%1.2f", p);
+    pressure += ",";
     
     motorRunTime = 5000;
-    runMotor();
-    delay(3000);
-    getSensorReading();
     
-    motorRunTime = 5000;
-    runMotor();
-    delay(3000);
-    getSensorReading();
+    for (int i=1; i<=3; i=i+1){
+        runMotor();
+        //delay(500);
+        getSensorReading();
+        /*temp_log[i] = t_f;
+        humid_log[i] = h;
+        pressure_log[i] = p;*/
+        
+        temperature += String(t_f).format("%1.2f", t_f);
+        humidity += String(h).format("%1.2f", h);
+        pressure += String(p).format("%1.2f", p);
+        
+        if (i!=3){
+            temperature += ",";
+            humidity += ",";
+            pressure += ",";
+        }
+    }
     
-    motorRunTime = 5000;
-    runMotor();
-    delay(3000);
-    getSensorReading();
-    
-    temperature = String(t_f).format("%1.2f", t_f);
-    humidity = String(h).format("%1.2f", h);
-    pressure = String(p).format("%1.2f", p);
-    
-    String tempAfterFan = temperature;
-    String humidityAfterFan = humidity;
-    String pressureAfterFan = pressure;
-    
-    String variableCompare =  "{\"tempBeforeFan\": " + tempBeforeFan + ", \"humidityBeforeFan\": " + humidityBeforeFan + ", " + "\"pressureBeforeFan\": " + pressureBeforeFan + ", \"tempAfterFan\": " + tempAfterFan + ", "+ "\"humidityAfterFan\": " + humidityAfterFan+ ", "+ "\"pressureAfterFan\": " + pressureAfterFan + "}";
+    String variableCompare =  "{\"temp\": " + temperature + ", \"humidity\": " + humidity + ", " + "\"pressure\": " + pressure + "}";
     Particle.publish("variableCompare", variableCompare, PRIVATE);
 }
 
