@@ -5,14 +5,6 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
 BME280 sensor;
-    
-double h = 0.0;
-double h_previous = 5.0;
-double t_f = 0.0;
-double t_f_previous = 500.0;
-double p = 0.0;
-double p_previous = 50.0;
-double dewptf = 0.0;
 
 String temperature;
 String humidity;
@@ -20,7 +12,6 @@ String pressure;
 String webhook;
 String dewpoint;
 
-const int sensorPower = D7;
 bool canSleep = false;
 
 const long subscribeWaitingInterval = 8000; //wait time for PUBLISH feedback (millis)
@@ -28,7 +19,9 @@ const unsigned long MAX_TIME_TO_CONNECT_MS = 20000; //wait time for wiFi/cloud c
 const int sleepIntervalTimeOut = 1800; //sleep time if cloud connect timed out (s)
 const int sleepIntervalNormal = 450; //normal time between measurements (s)
 const int lowBatterySleepTime = 18000; //sleep time if low battery is triggered (s)
+int motorRunTime = 5000; //millis motor should be on
 
+const int sensorPower = D7;
 int analogPinSupply = A4;
 int controlPinSupply = D4;
 int analogPinBattery = A3;
@@ -40,7 +33,13 @@ double supplyV;
 int batteryV_top;
 int supplyV_top;
 
-const int motorRunTime = 5000; //seconds motor should be on
+double h = 0.0;
+double h_previous = 5.0;
+double t_f = 0.0;
+double t_f_previous = 500.0;
+double p = 0.0;
+double p_previous = 50.0;
+double dewptf = 0.0;
 
 void initializeSensor() {
     //For I2C, enable the following and disable the SPI section
@@ -102,8 +101,6 @@ void setup() {
     pinMode(motorPin, OUTPUT);
     pinMode(D3, INPUT);
     Particle.subscribe("webhook", subscribeHandler, MY_DEVICES);
-    
-    //Particle.connect();
 }
 
 void loop() {
@@ -121,8 +118,6 @@ void loop() {
     }
     
     publishData();
-    
-    //delay(5000);
     
     System.sleep(D3,RISING,sleepIntervalNormal);
 }
@@ -153,9 +148,7 @@ double checkBatteryVoltage(){
     return batteryV;
 }
 
-bool checkSolarPwr(){
-    
-    //if solar panel is active and charging battery, returns True
+bool checkSolarPwr(){ //if solar panel is active and charging battery, returns True
     
     checkBatteryVoltage();
     
@@ -208,6 +201,17 @@ void publishAndRunTestCompare(){
     String humidityBeforeFan = humidity;
     String pressureBeforeFan = pressure;
     
+    motorRunTime = 5000;
+    runMotor();
+    delay(3000);
+    getSensorReading();
+    
+    motorRunTime = 5000;
+    runMotor();
+    delay(3000);
+    getSensorReading();
+    
+    motorRunTime = 5000;
     runMotor();
     delay(3000);
     getSensorReading();
@@ -268,13 +272,12 @@ void getSensorReading()
     
     initializeSensor();
     
-    delay(25);
-    
-    //sensor power on time
+    delay(25); //sensor power on time
     
     t_f = sensor.readTempF();;
     h = sensor.readFloatHumidity();
     p = sensor.readFloatPressure();
+    
     p = 0.0002952998*p; //conver Pa to inHg
     dewptf = calculateDewPoint(t_f,h);
     
