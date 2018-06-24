@@ -207,13 +207,13 @@ void publishAndRunTestCompare(){
     humid_log[0] = h;
     pressure_log[0] = p;*/
     
-    temperature += String(t_f).format("%1.2f", t_f);
+    temperature = String(t_f).format("%1.2f", t_f);
     temperature += ",";
     
-    humidity += String(h).format("%1.2f", h);
+    humidity = String(h).format("%1.2f", h);
     humidity += ",";
     
-    pressure += String(p).format("%1.2f", p);
+    pressure = String(p).format("%1.2f", p);
     pressure += ",";
     
     motorRunTime = 5000;
