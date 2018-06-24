@@ -109,20 +109,13 @@ void loop() {
     
     checkPeriodicReset();
     
-    //publishAndRunTestCompare();
-    
     if (checkSolarPwr()) {
-        runMotor();
-        delay(3000);
-        getSensorReading();
-        delay(1000);
+        publishAndRunTestCompare();
     }
     else {
        getSensorReading(); 
     }
-    
-    publishData();
-    
+
     System.sleep(D3,RISING,sleepIntervalNormal);
 }
 
