@@ -17,7 +17,7 @@ bool canSleep = false;
 const long subscribeWaitingInterval = 8000; //wait time for PUBLISH feedback (millis)
 const unsigned long MAX_TIME_TO_CONNECT_MS = 20000; //wait time for wiFi/cloud connect (millis)
 const int sleepIntervalTimeOut = 1800; //sleep time if cloud connect timed out (s)
-const int sleepIntervalNormal = 480; //normal time between measurements (s)
+const int sleepIntervalNormal = 300; //normal time between measurements (s)
 const int lowBatterySleepTime = 18000; //sleep time if low battery is triggered (s)
 int motorRunTime = 5000; //millis motor should be on
 int lastResetTime = 0;
@@ -194,6 +194,8 @@ void checkPeriodicReset() {
 }
 
 void publishAndRunTestCompare(){
+
+    Particle.connect();
     
     /*double temp_log [4];
     double humid_log [4];
@@ -237,6 +239,17 @@ void publishAndRunTestCompare(){
     
     String variableCompare =  "{\"temp\": " + temperature + ", \"humidity\": " + humidity + ", " + "\"pressure\": " + pressure + "}";
     Particle.publish("variableCompare", variableCompare, PRIVATE);
+
+    long startTime = millis();
+
+    while (!canSleep && (millis() - startTime < subscribeWaitingInterval)) {
+        Particle.process();
+        delay(100);
+    }
+    //reset sleep checker bool to initial condition and then sleep
+    canSleep = false;
+    Particle.disconnect();
+    WiFi.off();
 }
 
 
