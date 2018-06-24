@@ -88,9 +88,9 @@ void initializeSensor() {
     //  0, skipped
     //  1 through 5, oversampling *1, *2, *4, *8, *16 respectively
     sensor.settings.humidOverSample = 1;
-    
+
     //initialize i2c
-    sensor.begin(); 
+    sensor.begin();
 }
 
 void subscribeHandler(const char* event, const char* data) {
@@ -106,14 +106,14 @@ void setup() {
 }
 
 void loop() {
-    
+
     checkPeriodicReset();
-    
+
     if (checkSolarPwr()) {
         publishAndRunTestCompare();
     }
     else {
-       getSensorReading(); 
+        getSensorReading();
     }
 
     System.sleep(D3,RISING,sleepIntervalNormal);
@@ -126,7 +126,7 @@ double calculateDewPoint(double T,double h) { /*Magnus Equation https://pdfs.sem
 }
 
 double checkBatteryVoltage(){
-    
+
     //if battery voltage is too low, switch system to deep sleep for X seconds
     pinMode(controlPinBattery, OUTPUT);
     pinMode(analogPinBattery, AN_INPUT);
@@ -137,18 +137,18 @@ double checkBatteryVoltage(){
     batteryV = 2*batteryV_top*0.0008;
     delay(4);
     digitalWrite(controlPinBattery, HIGH);
-    
+
     if (batteryV<=3.3) {
         System.sleep(D3,RISING,lowBatterySleepTime);
     }
-    
+
     return batteryV;
 }
 
 bool checkSolarPwr(){ //if solar panel is active and charging battery, returns True
-    
+
     checkBatteryVoltage();
-    
+
     pinMode(controlPinSupply, OUTPUT);
     pinMode(analogPinSupply, AN_INPUT);
     digitalWrite(controlPinSupply, HIGH);
@@ -158,9 +158,9 @@ bool checkSolarPwr(){ //if solar panel is active and charging battery, returns T
     supplyV = (2.463415)*supplyV_top*0.0008; //Vin -> 12k -> 8.2k -> GND, for max 3.3V (max input) @ 8V (Vocc of solar panel)
     delay(4);
     digitalWrite(controlPinSupply, HIGH);
-    
+
     double supplyV_adj = batteryV + 0.150;
-    
+
     if (supplyV >= supplyV_adj) {
         return true;
     }
@@ -170,18 +170,18 @@ bool checkSolarPwr(){ //if solar panel is active and charging battery, returns T
 }
 
 void runMotor(){
-    
+
     //run fan for X seconds, taking battery voltage measurement during current draw
-    
+
     long startMillisMotor = millis();
     long currentMillisMotor = millis();
-    while (currentMillisMotor - startMillisMotor <= motorRunTime) { 
+    while (currentMillisMotor - startMillisMotor <= motorRunTime) {
         currentMillisMotor = millis();
         analogWrite(motorPin, 127, 100);
     }
-    
+
     checkBatteryVoltage();
-    
+
     analogWrite(motorPin, 0, 100);
 }
 
@@ -196,45 +196,45 @@ void checkPeriodicReset() {
 void publishAndRunTestCompare(){
 
     Particle.connect();
-    
+
     /*double temp_log [4];
     double humid_log [4];
     double pressure_log [4];*/
-    
+
     getSensorReading();
-    
+
     /*temp_log[0] = t_f;
     humid_log[0] = h;
     pressure_log[0] = p;*/
-    
+
     temperature = String(t_f).format("%1.2f", t_f);
     temperature += ",";
-    
+
     humidity = String(h).format("%1.2f", h);
     humidity += ",";
-    
+
     pressure = String(p).format("%1.2f", p);
     pressure += ",";
-    
+
     motorRunTime = 5000;
-    
-    for (int i=1; i<=6; i=i+1){
+
+    for (int i=1; i<=12; i=i+1){
         runMotor();
 
         getSensorReading();
-        
+
         temperature += String(t_f).format("%1.2f", t_f);
         humidity += String(h).format("%1.2f", h);
         pressure += String(p).format("%1.2f", p);
-        
-        if (i!=6){
+
+        if (i!=12){
             temperature += ",";
             humidity += ",";
             pressure += ",";
         }
     }
-    
-    String variableCompare =  "{\"temp\": " + "\"" + temperature + "\"" + ", \"humidity\": " + "\"" + humidity + "\"" + ", " + "\"pressure\": " + "\"" + pressure + "\"" + "}";
+
+    String variableCompare =  String("{\"temp\": ") + "\"" + temperature + "\"" + ", \"humidity\": " + "\"" + humidity + "\"" + ", " + "\"pressure\": " + "\"" + pressure + "\"" + "}";
     Particle.publish("variableCompare", variableCompare, PRIVATE);
 
     long startTime = millis();
@@ -250,29 +250,29 @@ void publishAndRunTestCompare(){
 }
 
 
-void publishData() 
+void publishData()
 {
-   if ( (!isAlmostEqual(t_f_previous,t_f,0.5)) || (!isAlmostEqual(h_previous,h,0.5)) || (!isAlmostEqual(p_previous,p,0.02))) {
+    if ( (!isAlmostEqual(t_f_previous,t_f,0.5)) || (!isAlmostEqual(h_previous,h,0.5)) || (!isAlmostEqual(p_previous,p,0.02))) {
         t_f_previous = t_f;
         h_previous = h;
         p_previous = p;
-        
+
         Particle.connect();
         //timeout occurred go back to deep sleep
         if (!waitFor(Particle.connected, MAX_TIME_TO_CONNECT_MS)) {
             System.sleep(D3,RISING,sleepIntervalTimeOut);
         }
-        
+
         temperature = String(t_f).format("%1.2f", t_f);
         humidity = String(h).format("%1.2f", h);
         pressure = String(p).format("%1.2f", p);
         dewpoint = String(p).format("%1.2f", dewptf);
         webhook =  "{\"baromin\": " + pressure + ", " +"\"dewptf\": " + dewpoint + ", " + "\"tempf\": " + temperature + ", " + "\"humidity\": " + humidity + "}";
         Particle.publish("webhook", webhook, PRIVATE);
-    
+
         // waiting for the event - delay runs the system idle code
         long startTime = millis();
-    
+
         while (!canSleep && (millis() - startTime < subscribeWaitingInterval)) {
             Particle.process();
             delay(100);
@@ -288,20 +288,20 @@ void getSensorReading()
 {
     //turn on sensor
     digitalWrite(sensorPower, HIGH);
-    
+
     delay(10);
-    
+
     initializeSensor();
-    
+
     delay(25); //sensor power on time
-    
+
     t_f = sensor.readTempF();;
     h = sensor.readFloatHumidity();
     p = sensor.readFloatPressure();
-    
-    p = 0.0002952998*p; //conver Pa to inHg
+
+    p = 0.0002952998*p; //convert Pa to inHg
     dewptf = calculateDewPoint(t_f,h);
-    
+
     //turn off sensor
     digitalWrite(sensorPower, LOW);
 }
@@ -312,3 +312,4 @@ bool isAlmostEqual(double a, double b, double epsilon)
     //abs is integer math
     return fabs(a - b) <= epsilon;
 }
+
