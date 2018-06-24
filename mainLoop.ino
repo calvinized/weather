@@ -17,7 +17,7 @@ bool canSleep = false;
 const long subscribeWaitingInterval = 8000; //wait time for PUBLISH feedback (millis)
 const unsigned long MAX_TIME_TO_CONNECT_MS = 20000; //wait time for wiFi/cloud connect (millis)
 const int sleepIntervalTimeOut = 1800; //sleep time if cloud connect timed out (s)
-const int sleepIntervalNormal = 300; //normal time between measurements (s)
+const int sleepIntervalNormal = 600; //normal time between measurements (s)
 const int lowBatterySleepTime = 18000; //sleep time if low battery is triggered (s)
 int motorRunTime = 5000; //millis motor should be on
 int lastResetTime = 0;
@@ -218,26 +218,23 @@ void publishAndRunTestCompare(){
     
     motorRunTime = 5000;
     
-    for (int i=1; i<=3; i=i+1){
+    for (int i=1; i<=6; i=i+1){
         runMotor();
-        //delay(500);
+
         getSensorReading();
-        /*temp_log[i] = t_f;
-        humid_log[i] = h;
-        pressure_log[i] = p;*/
         
         temperature += String(t_f).format("%1.2f", t_f);
         humidity += String(h).format("%1.2f", h);
         pressure += String(p).format("%1.2f", p);
         
-        if (i!=3){
+        if (i!=6){
             temperature += ",";
             humidity += ",";
             pressure += ",";
         }
     }
     
-    String variableCompare =  "{\"temp\": " + temperature + ", \"humidity\": " + humidity + ", " + "\"pressure\": " + pressure + "}";
+    String variableCompare =  "{\"temp\": " + "\"" + temperature + "\"" + ", \"humidity\": " + "\"" + humidity + "\"" + ", " + "\"pressure\": " + "\"" + pressure + "\"" + "}";
     Particle.publish("variableCompare", variableCompare, PRIVATE);
 
     long startTime = millis();
