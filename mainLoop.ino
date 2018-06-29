@@ -17,9 +17,9 @@ bool canSleep = false;
 const long subscribeWaitingInterval = 8000; //wait time for PUBLISH feedback (millis)
 const unsigned long MAX_TIME_TO_CONNECT_MS = 20000; //wait time for wiFi/cloud connect (millis)
 const int sleepIntervalTimeOut = 1800; //sleep time if cloud connect timed out (s)
-const int sleepIntervalNormal = 480; //normal time between measurements (s)
+const int sleepIntervalNormal = 120; //normal time between measurements (s)
 const int lowBatterySleepTime = 18000; //sleep time if low battery is triggered (s)
-int motorRunTime = 5000; //millis motor should be on
+int motorRunTime = 50000; //millis motor should be on
 int lastResetTime = 0;
 
 const int sensorPower = D7;
@@ -249,7 +249,7 @@ void publishAndRunTestCompare(){
 
 void publishData() 
 {
-   if ( (!isAlmostEqual(t_f_previous,t_f,0.5)) || (!isAlmostEqual(h_previous,h,0.5)) || (!isAlmostEqual(p_previous,p,0.02))) {
+   if (true) {
         t_f_previous = t_f;
         h_previous = h;
         p_previous = p;
