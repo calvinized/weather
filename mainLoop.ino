@@ -17,9 +17,9 @@ bool canSleep = false;
 const long subscribeWaitingInterval = 8000; //wait time for PUBLISH feedback (millis)
 const unsigned long MAX_TIME_TO_CONNECT_MS = 20000; //wait time for wiFi/cloud connect (millis)
 const int sleepIntervalTimeOut = 1800; //sleep time if cloud connect timed out (s)
-const int sleepIntervalNormal = 600; //normal time between measurements (s)
-const int lowBatterySleepTime = 18000; //sleep time if low battery is triggered (s)
-int motorRunTime = 5000; //millis motor should be on
+const int sleepIntervalNormal = 720; //normal time between measurements (s)
+const int lowBatterySleepTime = 21600; //sleep time if low battery is triggered (s)
+int motorRunTime = 50000; //millis motor should be on
 int lastResetTime = 0;
 
 const int sensorPower = D7;
@@ -110,11 +110,16 @@ void loop() {
     checkPeriodicReset();
 
     if (checkSolarPwr()) {
-        publishAndRunTestCompare();
+        runMotor();
+        delay(3000);
+        getSensorReading();
+        delay(1000);
     }
     else {
         getSensorReading();
     }
+
+    publishData();
 
     System.sleep(D3,RISING,sleepIntervalNormal);
 }
@@ -193,63 +198,6 @@ void checkPeriodicReset() {
     }
 }
 
-void publishAndRunTestCompare(){
-
-    Particle.connect();
-
-    /*double temp_log [4];
-    double humid_log [4];
-    double pressure_log [4];*/
-
-    getSensorReading();
-
-    /*temp_log[0] = t_f;
-    humid_log[0] = h;
-    pressure_log[0] = p;*/
-
-    temperature = String(t_f).format("%1.2f", t_f);
-    temperature += ",";
-
-    humidity = String(h).format("%1.2f", h);
-    humidity += ",";
-
-    pressure = String(p).format("%1.2f", p);
-    pressure += ",";
-
-    motorRunTime = 5000;
-
-    for (int i=1; i<=12; i=i+1){
-        runMotor();
-
-        getSensorReading();
-
-        temperature += String(t_f).format("%1.2f", t_f);
-        humidity += String(h).format("%1.2f", h);
-        pressure += String(p).format("%1.2f", p);
-
-        if (i!=12){
-            temperature += ",";
-            humidity += ",";
-            pressure += ",";
-        }
-    }
-
-    String variableCompare =  String("{\"temp\": ") + "\"" + temperature + "\"" + ", \"humidity\": " + "\"" + "0" + "\"" + ", " + "\"pressure\": " + "\"" + "0" + "\"" + "}";
-    Particle.publish("variableCompare", variableCompare, PRIVATE);
-
-    long startTime = millis();
-
-    while (!canSleep && (millis() - startTime < subscribeWaitingInterval)) {
-        Particle.process();
-        delay(100);
-    }
-    //reset sleep checker bool to initial condition and then sleep
-    canSleep = false;
-    Particle.disconnect();
-    WiFi.off();
-}
-
-
 void publishData()
 {
     if ( (!isAlmostEqual(t_f_previous,t_f,0.5)) || (!isAlmostEqual(h_previous,h,0.5)) || (!isAlmostEqual(p_previous,p,0.02))) {
@@ -312,4 +260,3 @@ bool isAlmostEqual(double a, double b, double epsilon)
     //abs is integer math
     return fabs(a - b) <= epsilon;
 }
-
