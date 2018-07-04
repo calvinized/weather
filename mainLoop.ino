@@ -14,8 +14,8 @@ String dewpoint;
 
 bool canSleep = false;
 
-const long subscribeWaitingInterval = 8000; //wait time for PUBLISH feedback (millis)
-const unsigned long MAX_TIME_TO_CONNECT_MS = 20000; //wait time for wiFi/cloud connect (millis)
+const int subscribeWaitingInterval = 8000; //wait time for PUBLISH feedback (millis)
+const int MAX_TIME_TO_CONNECT_MS = 20000; //wait time for wiFi/cloud connect (millis)
 const int sleepIntervalTimeOut = 1800; //sleep time if cloud connect timed out (s)
 const int sleepIntervalNormal = 720; //normal time between measurements (s)
 const int lowBatterySleepTime = 21600; //sleep time if low battery is triggered (s)
@@ -23,11 +23,11 @@ int motorRunTime = 50000; //millis motor should be on
 int lastResetTime = 0;
 
 const int sensorPower = D7;
-int analogPinSupply = A4;
-int controlPinSupply = D4;
-int analogPinBattery = A3;
-int controlPinBattery = D5;
-int motorPin = A5;
+const int analogPinSupply = A4;
+const int controlPinSupply = D4;
+const int analogPinBattery = A3;
+const int controlPinBattery = D5;
+const int motorPin = A5;
 
 double batteryV;
 double supplyV;
@@ -178,8 +178,8 @@ void runMotor(){
 
     //run fan for X seconds, taking battery voltage measurement during current draw
 
-    long startMillisMotor = millis();
-    long currentMillisMotor = millis();
+    unsigned long startMillisMotor = millis();
+    unsigned long currentMillisMotor = millis();
     while (currentMillisMotor - startMillisMotor <= motorRunTime) {
         currentMillisMotor = millis();
         analogWrite(motorPin, 127, 100);
@@ -221,7 +221,7 @@ void publishData()
         Particle.publish("webhook", webhook, PRIVATE);
 
         // waiting for the event - delay runs the system idle code
-        long startTime = millis();
+        unsigned long startTime = millis();
 
         while (!canSleep && (millis() - startTime < subscribeWaitingInterval)) {
             Particle.process();
