@@ -208,8 +208,6 @@ void publishData()
         Particle.connect();
         //timeout occurred go back to deep sleep
         if (!waitFor(Particle.connected, MAX_TIME_TO_CONNECT_MS)) {
-            Particle.disconnect();
-            WiFi.off();
             System.sleep(D3,RISING,sleepIntervalTimeOut);
         }
 
