@@ -145,6 +145,7 @@ double checkBatteryVoltage(){
 
     if (batteryV<=3.3) {
         System.sleep(D3,RISING,lowBatterySleepTime);
+        System.reset();
     }
 
     return batteryV;
@@ -209,6 +210,7 @@ void publishData()
         //timeout occurred go back to deep sleep
         if (!waitFor(Particle.connected, MAX_TIME_TO_CONNECT_MS)) {
             System.sleep(D3,RISING,sleepIntervalTimeOut);
+            System.reset();
         }
 
         temperature = String(t_f).format("%1.2f", t_f);
